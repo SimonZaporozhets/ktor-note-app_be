@@ -1,7 +1,10 @@
 package com.amdroiddevs.data
 
+import com.amdroiddevs.security.checkHashForPassword
 import data.collections.Note
 import data.collections.User
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.toList
 import org.litote.kmongo.contains
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.eq
@@ -23,16 +26,24 @@ suspend fun checkIfUserExists(email: String): Boolean {
 
 suspend fun checkPasswordForEmail(email: String, passwordToCheck: String): Boolean {
     val actualPassword = users.findOne(User::email eq email)?.password ?: return false
-    return actualPassword == passwordToCheck
+    return checkHashForPassword(passwordToCheck, actualPassword)
+}
+
+suspend fun getAllNotes(): List<Note> {
+    return notes.find().toFlow().toList()
 }
 
 suspend fun getNotesForUser(email: String): List<Note> {
-    return notes.find(Note::owners contains email).toList()
+    val list = mutableListOf<Note>()
+    notes.find(Note::owners contains email).toFlow().collect {
+        list.add(it)
+    }
+    return list
 }
 
 suspend fun saveNote(note: Note): Boolean {
     val noteExists = notes.findOneById(note.id) != null
-    return if(noteExists) {
+    return if (noteExists) {
         notes.updateOneById(note.id, note).wasAcknowledged()
     } else {
         notes.insertOne(note).wasAcknowledged()
@@ -52,7 +63,7 @@ suspend fun addOwnerToNote(noteID: String, owner: String): Boolean {
 suspend fun deleteNoteForUser(email: String, noteID: String): Boolean {
     val note = notes.findOne(Note::id eq noteID, Note::owners contains email)
     note?.let { note ->
-        if(note.owners.size > 1) {
+        if (note.owners.size > 1) {
             // the note has multiple owners, so we just delete the email from the owners list
             val newOwners = note.owners - email
             val updateResult = notes.updateOne(Note::id eq note.id, setValue(Note::owners, newOwners))

@@ -5,18 +5,10 @@ import com.amdroiddevs.routes.loginRoute
 import com.amdroiddevs.routes.noteRoutes
 import com.amdroiddevs.routes.registerRoute
 import io.ktor.application.*
-import io.ktor.response.*
-import io.ktor.request.*
-import io.ktor.application.Application
-import io.ktor.application.install
-import io.ktor.auth.Authentication
-import io.ktor.auth.UserIdPrincipal
-import io.ktor.auth.basic
-import io.ktor.features.CallLogging
-import io.ktor.features.ContentNegotiation
-import io.ktor.features.DefaultHeaders
-import io.ktor.gson.gson
-import io.ktor.routing.Routing
+import io.ktor.auth.*
+import io.ktor.features.*
+import io.ktor.gson.*
+import io.ktor.routing.*
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
@@ -25,6 +17,7 @@ fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 fun Application.module(testing: Boolean = false) {
     install(DefaultHeaders)
     install(CallLogging)
+
     install(ContentNegotiation) {
         gson {
             setPrettyPrinting()
@@ -52,4 +45,3 @@ private fun Authentication.Configuration.configureAuth() {
         }
     }
 }
-
